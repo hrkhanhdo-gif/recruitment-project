@@ -1,0 +1,341 @@
+<style>
+    :root {
+        --primary-color: #FFC107;
+        /* Yellow */
+        --secondary-color: #FFF;
+        /* White */
+        --accent-blue: #0D6EFD;
+        --accent-green: #198754;
+        --accent-red: #DC3545;
+        --accent-orange: #FD7E14;
+        --text-dark: #333;
+        --bg-light: #F8F9FA;
+        --sidebar-width: 250px;
+    }
+
+    body {
+        font-family: 'Lexend', sans-serif;
+        background-color: var(--bg-light);
+        overflow-x: hidden;
+    }
+
+    /* Sidebar */
+    .sidebar {
+        height: 100vh;
+        width: var(--sidebar-width);
+        position: fixed;
+        top: 0;
+        left: 0;
+        background-color: var(--primary-color);
+        color: var(--text-dark);
+        padding-top: 20px;
+        box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        z-index: 1000;
+    }
+
+    .sidebar .brand {
+        font-size: 1.5rem;
+        font-weight: 700;
+        text-align: center;
+        margin-bottom: 30px;
+        color: #fff;
+        /* White Text on Yellow */
+        text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.1);
+    }
+
+    .sidebar a {
+        padding: 15px 25px;
+        text-decoration: none;
+        font-size: 1rem;
+        color: var(--text-dark);
+        display: block;
+        transition: 0.3s;
+        font-weight: 500;
+    }
+
+    .sidebar a:hover,
+    .sidebar a.active {
+        background-color: rgba(255, 255, 255, 0.4);
+        border-right: 5px solid #fff;
+    }
+
+    .sidebar i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+
+    /* Main Content */
+    .main-content {
+        margin-left: var(--sidebar-width);
+        padding: 30px;
+    }
+
+    /* Cards */
+    .stat-card {
+        border: none;
+        border-radius: 15px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s;
+        color: white;
+    }
+
+    .stat-card:hover {
+        transform: translateY(-5px);
+    }
+
+    .bg-gradient-blue {
+        background: linear-gradient(45deg, #4e73df, #224abe);
+    }
+
+    .bg-gradient-green {
+        background: linear-gradient(45deg, #1cc88a, #13855c);
+    }
+
+    .bg-gradient-orange {
+        background: linear-gradient(45deg, #f6c23e, #dda20a);
+        color: #fff !important;
+    }
+
+    .bg-gradient-red {
+        background: linear-gradient(45deg, #e74a3b, #be2617);
+    }
+
+    /* Kanban Board */
+    .kanban-board {
+        display: flex;
+        overflow-x: auto;
+        padding-top: 10px;
+        padding-bottom: 5px;
+        gap: 20px;
+        transform: rotateX(180deg);
+        /* Move horizontal scrollbar to top */
+        min-height: calc(100vh - 250px);
+    }
+
+    /* Scrollbar Styling for Webkit */
+    .kanban-board::-webkit-scrollbar,
+    .kanban-items::-webkit-scrollbar {
+        height: 8px;
+        width: 6px;
+    }
+
+    .kanban-board::-webkit-scrollbar-track,
+    .kanban-items::-webkit-scrollbar-track {
+        background: #f1f1f1;
+        border-radius: 10px;
+    }
+
+    .kanban-board::-webkit-scrollbar-thumb,
+    .kanban-items::-webkit-scrollbar-thumb {
+        background: #ccc;
+        border-radius: 10px;
+    }
+
+    .kanban-board::-webkit-scrollbar-thumb:hover,
+    .kanban-items::-webkit-scrollbar-thumb:hover {
+        background: var(--primary-color);
+    }
+
+    .kanban-column {
+        min-width: 320px;
+        max-width: 320px;
+        background-color: #f1f2f4;
+        border-radius: 10px;
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        max-height: 75vh;
+        /* Individual column height limit */
+        transform: rotateX(180deg);
+        /* Flip back content */
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .kanban-header {
+        font-weight: 600;
+        margin-bottom: 15px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding-bottom: 10px;
+        border-bottom: 2px solid #ddd;
+        flex-shrink: 0;
+    }
+
+    .kanban-items {
+        overflow-y: auto;
+        flex-grow: 1;
+        padding-right: 5px;
+        min-height: 150px;
+        /* Ensure drag and drop space */
+    }
+
+    .kanban-card {
+        background: white;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 10px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        cursor: grab;
+        border-left: 4px solid var(--primary-color);
+    }
+
+    .kanban-card h5 {
+        font-size: 1rem;
+        margin-bottom: 5px;
+        color: #333;
+    }
+
+    .kanban-card p {
+        font-size: 0.85rem;
+        color: #666;
+        margin-bottom: 5px;
+    }
+
+    .kanban-card .meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 0.75rem;
+        color: #888;
+        margin-top: 10px;
+    }
+
+    /* Sections Visibility */
+    .section {
+        display: none;
+        animation: fadeIn 0.3s;
+    }
+
+    .section.active {
+        display: block;
+    }
+
+    @keyframes fadeIn {
+        from {
+            opacity: 0;
+        }
+
+        to {
+            opacity: 1;
+        }
+    }
+
+    /* Login Screen */
+    #login-screen {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100vh;
+        background: linear-gradient(135deg, #FFC107 0%, #FFF 100%);
+        z-index: 2000;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+
+    .login-box {
+        background: white;
+        padding: 40px;
+        border-radius: 20px;
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        width: 400px;
+        text-align: center;
+    }
+
+    .login-box h2 {
+        color: #333;
+        margin-bottom: 30px;
+        font-weight: 700;
+    }
+
+    .btn-primary-custom {
+        background-color: var(--primary-color);
+        border: none;
+        padding: 10px 20px;
+        font-weight: 600;
+        width: 100%;
+        color: #fff;
+        border-radius: 5px;
+    }
+
+    .btn-primary-custom:hover {
+        background-color: #ffca2c;
+    }
+
+    /* Smart Email Modal Styles */
+    .email-editor-container {
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        overflow: hidden;
+    }
+
+    #email-body-quill {
+        height: 300px;
+        font-size: 14px;
+        background: #fff;
+    }
+
+    .ql-toolbar.ql-snow {
+        border: none !important;
+        border-bottom: 1px solid #ced4da !important;
+        background: #f8f9fa;
+    }
+
+    .ql-container.ql-snow {
+        border: none !important;
+    }
+
+    .recipient-tags-input {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 5px;
+        padding: 5px;
+        border: 1px solid #ced4da;
+        border-radius: 0.375rem;
+        min-height: 38px;
+        background: #fff;
+    }
+
+    .email-tag {
+        background: #e9ecef;
+        border-radius: 3px;
+        padding: 2px 8px;
+        font-size: 0.85rem;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .email-tag i {
+        cursor: pointer;
+        font-size: 0.75rem;
+    }
+
+    .email-tag i:hover {
+        color: var(--accent-red);
+    }
+
+    .attachment-badge {
+        background: #f1f3f4;
+        border: 1px solid #dadce0;
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 12px;
+        margin-right: 8px;
+        margin-bottom: 8px;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .attachment-remove {
+        margin-left: 8px;
+        cursor: pointer;
+        color: #70757a;
+    }
+
+    .attachment-remove:hover {
+        color: #d93025;
+    }
+</style>
