@@ -1,0 +1,349 @@
+<script>
+    let allJobs = [];
+    let allNews = [];
+
+    document.addEventListener('DOMContentLoaded', function () {
+        // Load Jobs only if container exists (Career Page)
+        if (document.getElementById('job-list-container')) {
+            loadJobs();
+        }
+
+        // Load News only if container exists (News Page)
+        if (document.getElementById('news-container')) {
+            loadCareerNews();
+        }
+    });
+
+    // 1. LOAD JOBS
+    function loadJobs() {
+        google.script.run.withSuccessHandler(renderJobs).apiGetOpenJobsV3();
+    }
+
+    function renderJobs(jobs) {
+        allJobs = jobs; // Store for filtering
+        const container = document.getElementById('job-list-container');
+        container.innerHTML = '';
+
+        if (!jobs || jobs.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center text-muted"><h4>Hiện chưa có vị trí nào đang tuyển.</h4></div>';
+            return;
+        }
+
+        jobs.forEach(job => {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4';
+            col.innerHTML = `
+<div class="job-card h-100 p-3 shadow-sm" style="cursor: pointer; transition: transform 0.2s;"
+    onclick="viewJob('${job.ID}')" onmouseover="this.style.transform='translateY(-5px)'"
+    onmouseout="this.style.transform='translateY(0)'">
+    <div class="job-title fw-bold text-primary mb-2">${job.Title}</div>
+    <div class="job-meta mb-3">
+        <i class="fas fa-building text-muted"></i> ${job.Department} <br>
+        <i class="fas fa-map-marker-alt text-muted"></i> ${job.Location} <br>
+        <i class="fas fa-clock text-muted"></i> ${job.Type}
+    </div>
+    <div class="mb-3">
+        <small class="text-muted text-truncate d-block" style="max-height: 4.5em; overflow:hidden;">
+            ${job.Description || 'Xem chi tiết để biết thêm...'}
+        </small>
+    </div>
+    <!-- Stop propagation for button to prevent opening view modal when clicking apply -->
+    <button class="btn btn-apply w-100"
+        onclick="event.stopPropagation(); openApplyModal('${job.ID}', '${job.Title}', '${job.Department}')">
+        Ứng Tuyển Ngay
+    </button>
+</div>
+`;
+            container.appendChild(col);
+        });
+    }
+
+    // 2. FILTER JOBS
+    function filterJobs() {
+        const keyword = document.getElementById('search-keyword').value.toLowerCase();
+        const location = document.getElementById('search-location').value;
+
+        const filtered = allJobs.filter(job => {
+            const matchKey = job.Title.toLowerCase().includes(keyword) ||
+                (job.Description && job.Description.toLowerCase().includes(keyword));
+            const matchLoc = location === '' || job.Location.includes(location);
+            return matchKey && matchLoc;
+        });
+
+        renderFiltered(filtered);
+    }
+
+    function renderFiltered(jobs) {
+        const container = document.getElementById('job-list-container');
+        container.innerHTML = '';
+        if (jobs.length === 0) {
+            container.innerHTML = '<div class="col-12 text-center text-muted"><h4>Không tìm thấy công việc phù hợp.</h4></div>';
+            return;
+        }
+        jobs.forEach(job => {
+            const col = document.createElement('div');
+            col.className = 'col-md-6 col-lg-4';
+            col.innerHTML = `
+<div class="job-card h-100 p-3 shadow-sm" style="cursor: pointer; transition: transform 0.2s;"
+    onclick="viewJob('${job.ID}')" onmouseover="this.style.transform='translateY(-5px)'"
+    onmouseout="this.style.transform='translateY(0)'">
+    <div class="job-title fw-bold text-primary mb-2">${job.Title}</div>
+    <div class="job-meta mb-3">
+        <i class="fas fa-building text-muted"></i> ${job.Department} <br>
+        <i class="fas fa-map-marker-alt text-muted"></i> ${job.Location} <br>
+        <i class="fas fa-clock text-muted"></i> ${job.Type}
+    </div>
+    <div class="mb-3">
+        <small class="text-muted text-truncate d-block" style="max-height: 4.5em; overflow:hidden;">
+            ${job.Description || 'Xem chi tiết để biết thêm...'}
+        </small>
+    </div>
+    <button class="btn btn-apply w-100"
+        onclick="event.stopPropagation(); openApplyModal('${job.ID}', '${job.Title}', '${job.Department}')">
+        Ứng Tuyển Ngay
+    </button>
+</div>
+`;
+            container.appendChild(col);
+        });
+    }
+
+    // 3. APPLY MODAL
+    const applyModal = new bootstrap.Modal(document.getElementById('applyModal'));
+
+    function openApplyModal(id, title, dept) {
+        document.getElementById('app-job-id').value = id;
+        document.getElementById('app-position').value = title;
+        document.getElementById('app-department').value = dept;
+        document.getElementById('apply-job-title').innerText = title;
+        document.getElementById('apply-form').reset();
+        applyModal.show();
+    }
+
+    function submitApplication() {
+        const data = {
+            name: document.getElementById('app-name').value,
+            phone: document.getElementById('app-phone').value,
+            email: document.getElementById('app-email').value,
+            position: document.getElementById('app-position').value,
+            department: document.getElementById('app-department').value,
+            cv_link: document.getElementById('app-cv-link').value,
+            source: 'Website'
+        };
+
+        if (!data.name || !data.phone || !data.email) {
+            Swal.fire('Lỗi', 'Vui lòng điền đầy đủ thông tin bắt buộc (*)', 'error');
+            return;
+        }
+
+        // Show loading
+        const btn = document.querySelector('#applyModal .btn-dark');
+        const originalText = btn.innerText;
+        btn.innerText = 'Đang gửi...';
+        btn.disabled = true;
+
+        google.script.run.withSuccessHandler(function (res) {
+            btn.innerText = originalText;
+            btn.disabled = false;
+            if (res.success) {
+                applyModal.hide();
+                Swal.fire('Thành công!', 'Hồ sơ của bạn đã được gửi. Chúng tôi sẽ liên hệ sớm!', 'success');
+            } else {
+                Swal.fire('Lỗi', res.message, 'error');
+            }
+        }).apiSubmitApplicationPublic(data);
+    }
+
+    // 4. TRACKING
+    // 4. TRACKING
+    function trackApplication() {
+        const phone = document.getElementById('tracking-phone').value;
+        if (!phone) {
+            Swal.fire('Lỗi', 'Vui lòng nhập số điện thoại', 'warning');
+            return;
+        }
+
+        const resultDiv = document.getElementById('tracking-result');
+        resultDiv.innerHTML = '<div class="spinner-border spinner-border-sm"></div> Đang tra cứu...';
+
+        google.script.run.withSuccessHandler(function (res) {
+            if (res.success && res.data.length > 0) {
+                let html = '<div class="list-group">';
+                res.data.forEach(app => {
+                    const status = (app.Status || app.Stage || 'Ứng tuyển').toString();
+                    const s = status.toLowerCase();
+
+                    let message = '';
+                    let badgeClass = 'bg-secondary';
+                    let alertClass = 'alert-info';
+                    let iconClass = 'fa-info-circle';
+
+                    // 1. OFFER / HIRED
+                    if (s.includes('nhận việc') || s.includes('hired') || s.includes('offer') || s.includes('trúng tuyển')) {
+                        message = 'Chúc mừng bạn đã trúng tuyển, bạn vui lòng chuẩn bị hồ sơ để nhận việc theo quy định của công ty.';
+                        badgeClass = 'bg-success';
+                        alertClass = 'alert-success border-success';
+                        iconClass = 'fa-check-circle';
+                    }
+                    // 2. REJECTED / FAILED
+                    else if (s.includes('từ chối') || s.includes('loại') || s.includes('rejected') || s.includes('fail') || s.includes('không đạt')) {
+                        message = 'Rất tiếc hồ sơ bạn chưa phù hợp với vị trí này trong hiện tại công ty sẽ liên hệ với bạn nếu có 1 cơ hội khác phù hợp hơn hoặc nếu bạn thấy có vị trí khác phù hợp với bản thân có thể ứng tuyển.';
+                        badgeClass = 'bg-danger';
+                        alertClass = 'alert-danger border-danger';
+                        iconClass = 'fa-times-circle';
+                    }
+                    // 3. IN PROGRESS (Default)
+                    else {
+                        message = 'Quy trình này cần 1 - 5 ngày để tiến hành quy trình mong ứng viên chờ đợi phía tuyển dụng sẽ sớm liên hệ đến bạn.';
+                        badgeClass = 'bg-warning text-dark';
+                        alertClass = 'alert-warning border-warning';
+                        iconClass = 'fa-clock';
+                    }
+
+                    html += `
+                        <div class="list-group-item list-group-item-action mb-3 border shadow-sm p-3 rounded">
+                            <div class="d-flex w-100 justify-content-between align-items-center mb-2">
+                                <h5 class="mb-1 text-primary fw-bold">
+                                    <i class="fas fa-briefcase"></i> ${app.Position}
+                                </h5>
+                                <small class="text-muted">
+                                    <i class="far fa-calendar-alt"></i> ${app.Applied_Date}
+                                </small>
+                            </div>
+                            <div class="mb-3">
+                                <strong>Phòng ban:</strong> ${app.Department} <br>
+                                <strong>Trạng thái:</strong> <span class="badge ${badgeClass} rounded-pill">${status}</span>
+                            </div>
+                            <div class="alert ${alertClass} d-flex align-items-start mb-0">
+                                <i class="fas ${iconClass} me-2 mt-1 fs-5"></i>
+                                <div>${message}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                html += '</div>';
+                resultDiv.innerHTML = html;
+            } else {
+                resultDiv.innerHTML = '<div class="alert alert-light text-center border shadow-sm"><i class="fas fa-search"></i> Không tìm thấy hồ sơ nào với số điện thoại này.</div>';
+            }
+        }).apiTrackApplication(phone);
+    }
+    function viewJob(id) {
+        const job = allJobs.find(j => j.ID == id);
+        if (!job) return;
+
+        document.getElementById('view-job-title').innerText = job.Title;
+        document.getElementById('view-job-dept').innerText = job.Department;
+        document.getElementById('view-job-loc').innerText = job.Location;
+        document.getElementById('view-job-type').innerText = job.Type;
+        document.getElementById('view-job-desc').innerText = job.Description || 'Mô tả chi tiết đang cập nhật...';
+
+        // Wire up Apply button from View Modal
+        const btnApply = document.getElementById('btn-apply-from-view');
+        btnApply.onclick = function () {
+            const viewModalEl = document.getElementById('viewJobModal');
+            const viewModal = bootstrap.Modal.getInstance(viewModalEl);
+            if (viewModal) viewModal.hide();
+            openApplyModal(job.ID, job.Title, job.Department);
+        };
+
+        const modal = new bootstrap.Modal(document.getElementById('viewJobModal'));
+        modal.show();
+    }
+
+    // 5. NEWS
+    function loadCareerNews() {
+        google.script.run.withSuccessHandler(function (data) {
+            allNews = data;
+            const container = document.getElementById('news-container');
+            if (!container) return;
+
+            // Filter only Published
+            const published = data.filter(x => x.Status === 'Published');
+
+            if (published.length === 0) {
+                container.innerHTML = '<div class="col-12 text-center text-muted">Chưa có tin tức nào.</div>';
+                return;
+            }
+
+            container.innerHTML = '';
+            published.forEach(item => {
+                const dateStr = item.Date ? new Date(item.Date).toLocaleDateString() : '';
+                // Handle multiple images
+                const imgs = item.Image ? item.Image.split(/[\n,;]+/).map(s => s.trim()).filter(s => s) : [];
+                const thumbnail = imgs.length > 0 ? imgs[0] : 'https://via.placeholder.com/300x200?text=No+Image';
+
+                container.innerHTML += `
+                    <div class="col-md-4">
+                        <div class="card h-100 shadow-sm border-0 news-card">
+                            <img src="${thumbnail}" class="card-img-top" alt="${item.Title}" referrerpolicy="no-referrer" style="height: 200px; object-fit: cover;" onerror="this.src='https://via.placeholder.com/300x200?text=No+Image'">
+                            <div class="card-body d-flex flex-column">
+                                <small class="text-muted mb-2"><i class="far fa-calendar-alt"></i> ${dateStr}</small>
+                                <h5 class="card-title fw-bold text-truncate" title="${item.Title}">${item.Title}</h5>
+                                <p class="card-text text-muted flex-grow-1" style="display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden;">${item.Content}</p>
+                                <button class="btn btn-outline-warning mt-3 align-self-start fw-bold" onclick="viewNewsDetail('${item.ID}')">Xem chi tiết</button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+        }).apiGetNews();
+    }
+
+    function viewNewsDetail(id) {
+        const item = allNews.find(x => x.ID == id);
+        if (!item) return;
+
+        document.getElementById('view-news-title').innerText = item.Title;
+        document.getElementById('view-news-date').innerText = item.Date ? new Date(item.Date).toLocaleDateString() : '';
+        document.getElementById('view-news-content').innerText = item.Content;
+
+        // Handle Images (Carousel or Single)
+        const container = document.getElementById('view-news-image-container');
+        const imgs = item.Image ? item.Image.split(/[\n,;]+/).map(s => s.trim()).filter(s => s) : [];
+
+        if (imgs.length === 0) {
+            container.innerHTML = '';
+        } else if (imgs.length === 1) {
+            container.innerHTML = `<img src="${imgs[0]}" class="img-fluid rounded w-100" referrerpolicy="no-referrer" style="max-height: 500px; object-fit: contain;">`;
+        } else {
+            // Build Bootstrap Carousel
+            let indicators = '';
+            let slides = '';
+
+            imgs.forEach((img, index) => {
+                const active = index === 0 ? 'active' : '';
+                indicators += `<button type="button" data-bs-target="#newsCarousel" data-bs-slide-to="${index}" class="${active}"></button>`;
+                slides += `
+                    <div class="carousel-item ${active}">
+                        <img src="${img}" class="d-block w-100 rounded" referrerpolicy="no-referrer" style="max-height: 500px; object-fit: contain;" alt="Slide ${index + 1}">
+                    </div>
+                `;
+            });
+
+            container.innerHTML = `
+                <div id="newsCarousel" class="carousel slide" data-bs-ride="carousel">
+                    <div class="carousel-indicators">
+                        ${indicators}
+                    </div>
+                    <div class="carousel-inner">
+                        ${slides}
+                    </div>
+                    <button class="carousel-control-prev" type="button" data-bs-target="#newsCarousel" data-bs-slide="prev">
+                        <span class="carousel-control-prev-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
+                        <span class="visually-hidden">Previous</span>
+                    </button>
+                    <button class="carousel-control-next" type="button" data-bs-target="#newsCarousel" data-bs-slide="next">
+                        <span class="carousel-control-next-icon" aria-hidden="true" style="background-color: rgba(0,0,0,0.5); border-radius: 50%;"></span>
+                        <span class="visually-hidden">Next</span>
+                    </button>
+                </div>
+            `;
+        }
+
+        const modalEl = document.getElementById('viewNewsModal');
+        if (modalEl) {
+            new bootstrap.Modal(modalEl).show();
+        }
+    }
+</script>
