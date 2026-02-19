@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <base target="_top">
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Tin Tức - HR Recruit</title>
+    <!-- Bootstrap 5 -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- FontAwesome -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <?!= include('career_css'); ?>
+</head>
+
+<body>
+
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-light sticky-top">
+        <div class="container">
+            <a class="navbar-brand" href="<?= ScriptApp.getService().getUrl() ?>?view=career"><i
+                    class="fas fa-briefcase"></i> HR RECRUIT CAREERS</a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav ms-auto">
+                    <li class="nav-item"><a class="nav-link fw-bold"
+                            href="<?= ScriptApp.getService().getUrl() ?>?view=career">Việc Làm</a></li>
+                    <li class="nav-item"><a class="nav-link fw-bold active" href="#">Tin Tức</a></li>
+                </ul>
+            </div>
+        </div>
+    </nav>
+
+    <!-- News Section -->
+    <section id="news" class="container py-5">
+        <h2 class="text-center fw-bold mb-5">Tin Tức & Hoạt Động</h2>
+        <div id="news-container" class="row g-4">
+            <!-- News will be rendered here -->
+            <div class="text-center text-muted">
+                <div class="spinner-border text-warning" role="status"></div> Đang tải tin tức...
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2026 HR Recruit System. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <!-- MODAL: VIEW NEWS DETAILS -->
+    <div class="modal fade" id="viewNewsModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title fw-bold" id="view-news-title"></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div id="view-news-image-container" class="mb-3"></div>
+                    <p class="text-muted"><i class="far fa-calendar-alt"></i> <span id="view-news-date"></span></p>
+                    <div id="view-news-content" style="white-space: pre-wrap;"></div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Đóng</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <?!= include('career_js'); ?>
+
+</body>
+
+</html>
